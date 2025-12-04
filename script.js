@@ -54,7 +54,20 @@ function initializeMobileMenu() {
     });
 }
 
-// Enhanced Smooth Scrolling with Better Navigation
+document.getElementById("sample-download").addEventListener("click", function () {
+    fetch("Assets/Breaking-Silence-Ch1.pdf")
+        .then(res => res.blob())
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "Breaking-Silence-Ch1.pdf";
+            link.click();
+            URL.revokeObjectURL(url);
+        })
+        .catch(err => console.error("Download failed:", err));
+});
+
 function initializeSmoothScrolling() {
     const navLinks = document.querySelectorAll('nav a[href^="#"]');
     
@@ -648,4 +661,5 @@ if (typeof module !== 'undefined' && module.exports) {
         showMessage
     };
 }
+
 
