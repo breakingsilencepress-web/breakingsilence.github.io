@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeScrollEffects();
     initializeFormHandlers();
     initializeDownloadTracking();
-    initializeThemeToggle();   // ADD THIS LINE
+    initializeThemeToggle();
 });
 
 function initializeMobileMenu() {
@@ -54,20 +54,7 @@ function initializeMobileMenu() {
     });
 }
 
-document.getElementById("sample-download").addEventListener("click", function () {
-    fetch("Assets/Breaking-Silence-Ch1.pdf")
-        .then(res => res.blob())
-        .then(blob => {
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = "Breaking-Silence-Ch1.pdf";
-            link.click();
-            URL.revokeObjectURL(url);
-        })
-        .catch(err => console.error("Download failed:", err));
-});
-
+// Enhanced Smooth Scrolling with Better Navigation
 function initializeSmoothScrolling() {
     const navLinks = document.querySelectorAll('nav a[href^="#"]');
     
@@ -322,6 +309,7 @@ function initializeTestimonialSlider() {
     track.setAttribute('role', 'region');
     track.setAttribute('aria-label', 'Testimonial carousel');
 }
+
 // Enhanced Scroll Effects with Performance Optimization
 function initializeScrollEffects() {
     const header = document.querySelector('header');
@@ -353,6 +341,16 @@ function initializeScrollEffects() {
     updateHeader();
 }
 
+// CONFETTI FUNCTION
+// DEFAULT CONFETTI (clean, standard burst)
+function launchSubscriptionConfetti() {
+    confetti({
+        particleCount: 250,
+        spread: 70,
+        origin: { y: 0.6 }
+    });
+}
+
 // Enhanced Form Handlers with Better Validation
 function initializeFormHandlers() {
     const subscribeForm = document.querySelector('.subscribe-form');
@@ -360,6 +358,7 @@ function initializeFormHandlers() {
 
     const emailInput = subscribeForm.querySelector('input[type="email"]');
     const submitBtn = subscribeForm.querySelector('button[type="submit"]');
+    let hasShownConfetti = false;
 
     // Real-time validation
     emailInput.addEventListener('input', function() {
@@ -410,70 +409,70 @@ function initializeFormHandlers() {
             // We simulate a successful submission for demo purposes
             await new Promise(resolve => setTimeout(resolve, 1500));
             
-            showMessage(`🎉 Thank you! You've been subscribed with ${email}. Check your email for confirmation.`, 'success');
+            // SUCCESS - Show confetti!
+            launchSubscriptionConfetti();
+            
+            // Show success message
+            showMessage(`🎉 Welcome aboard! You've subscribed with ${email}. Check your email for confirmation.`, 'success');
+            
+            // Track conversion if analytics available
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'subscribe', {
+                    'event_category': 'subscription',
+                    'event_label': 'newsletter_signup',
+                    'value': 1
+                });
+            }
+            
+            if (typeof fbq !== 'undefined') {
+                fbq('track', 'Subscribe', {
+                    value: 0.00,
+                    currency: 'USD',
+                });
+            }
             
             // Reset form
             this.reset();
             emailInput.classList.remove('error');
             
-            // Track conversion if analytics available
-            if (typeof gtag !== 'undefined') {
-                gtag('event', 'conversion', {
-                    'send_to': 'AW-YOUR_CONVERSION_ID/subscribe',
-                    'event_callback': function() {
-                        console.log('Subscription tracked');
-                    }
-                });
-            }
+            // Mark that we've shown confetti for this session
+            hasShownConfetti = true;
+            
+            // Disable the button temporarily to prevent multiple submissions
+            setTimeout(() => {
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> Subscribed!';
+                submitBtn.style.backgroundColor = '#16a34a'; // Green color for success
+                
+                // Re-enable after 5 seconds in case they want to subscribe with another email
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.style.backgroundColor = '';
+                    submitBtn.classList.remove('loading');
+                }, 5000);
+            }, 1000);
             
         } catch (error) {
             showMessage('Sorry, there was an error processing your subscription. Please try again.', 'error');
             console.error('Subscription error:', error);
-        } finally {
-            // Reset button state
+            
+            // Reset button state on error
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
             submitBtn.classList.remove('loading');
         }
     });
-}
-// THEME TOGGLE – FINAL WORKING VERSION
-function initializeThemeToggle() {
-    const toggle = document.querySelector('.theme-toggle');
-    const html = document.documentElement;
-
-    if (!toggle) return;
-
-    // 1. On page load: respect saved theme or OS preference
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const shouldBeLight = savedTheme === 'light' || (!savedTheme && !prefersDark);
-
-    if (shouldBeLight) {
-        html.classList.add('light');
+    
+    // Add click listener to the subscribe button for immediate feedback
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function() {
+            // Add a subtle visual feedback
+            this.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
     }
-
-    // 2. Click / tap / space / enter = toggle
-    const toggleTheme = () => {
-        html.classList.toggle('light');
-        const isLight = html.classList.contains('light');
-        localStorage.setItem('theme', isLight ? 'light' : 'dark');
-    };
-
-    toggle.addEventListener('click', toggleTheme);
-    toggle.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            toggleTheme();
-        }
-    });
-
-    // 3. Optional: live sync with OS theme changes
-    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
-        if (!localStorage.getItem('theme')) {  // only if user hasn't chosen manually
-            html.classList.toggle('light', e.matches);
-        }
-    });
 }
 
 function isValidEmail(email) {
@@ -584,7 +583,7 @@ function initializeDownloadTracking() {
             if (typeof gtag !== 'undefined') {
                 gtag('event', 'download', {
                     'event_category': 'free_sample',
-                    'event_label': 'classified_innovation_sample',
+                    'event_label': 'Breaking Silence Chapter 1',
                     'value': 1
                 });
             }
@@ -613,6 +612,59 @@ function initializeDownloadTracking() {
                 this.disabled = false;
             }, 2000);
         }, 1500);
+    });
+}
+function initializeThemeToggle() {
+    const toggle = document.querySelector('.theme-toggle');
+    const html = document.documentElement;
+    const icon = toggle ? toggle.querySelector('i') : null;
+    const logo = document.getElementById('logo-img');
+
+    if (!toggle || !icon) return;
+
+    // Helper to update theme icon
+    function updateIcon(isLightTheme) {
+        icon.className = isLightTheme ? 'fas fa-sun' : 'fas fa-moon';
+    }
+
+    // Helper to update logo
+    function updateLogo(isLightTheme) {
+        if (!logo) return;
+        logo.src = isLightTheme ? 'Assets/Logo-black.png' : 'Assets/Logo-white.png';
+    }
+
+    // Set initial theme based on saved preference or OS
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isLight = savedTheme === 'light' || (!savedTheme && !prefersDark);
+
+    html.classList.toggle('light', isLight);
+    updateIcon(isLight);
+    updateLogo(isLight);
+
+    // Toggle theme on click or keyboard
+    const toggleTheme = () => {
+        const nowLight = html.classList.toggle('light');
+        localStorage.setItem('theme', nowLight ? 'light' : 'dark');
+        updateIcon(nowLight);
+        updateLogo(nowLight);
+    };
+
+    toggle.addEventListener('click', toggleTheme);
+    toggle.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleTheme();
+        }
+    });
+
+    // Sync with OS theme changes (if user hasn’t manually chosen)
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+        if (!localStorage.getItem('theme')) {
+            html.classList.toggle('light', e.matches);
+            updateIcon(e.matches);
+            updateLogo(e.matches);
+        }
     });
 }
 
@@ -661,5 +713,3 @@ if (typeof module !== 'undefined' && module.exports) {
         showMessage
     };
 }
-
-
